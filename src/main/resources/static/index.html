@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ubytovací protokol - ŠD Mladosť</title>
   <link href="/webjars/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://www.slovensko.sk/static/zep/dbridge_js/v1.0/config.js"></script>
+  <script src="https://www.slovensko.sk/static/zep/dbridge_js/v1.0/dCommon.min.js"></script>
+  <script src="https://www.slovensko.sk/static/zep/dbridge_js/v1.0/dSigXadesBp.min.js"></script>
 </head>
 <body>
 <main class="container py-4">
@@ -146,6 +149,7 @@
       <button type="button" class="btn btn-primary" id="uloz">Ulož XML</button>
       <button type="button" class="btn btn-secondary" id="over">Over XML voči XSD</button>
       <button type="button" class="btn btn-secondary" id="transformuj">Transformuj XML do HTML</button>
+      <button type="button" class="btn btn-success" id="podpisat">Podpísať</button>
     </div>
     <div id="vystup" class="alert d-none mt-3"></div>
   </form>
@@ -270,8 +274,8 @@
     };
   }
 
-  async function volaj(url, body) {
-    const init = { method: 'POST' };
+  async function volaj(url, body, metoda = 'POST') {
+    const init = { method: metoda };
     if (body) {
       init.headers = { 'Content-Type': 'application/json' };
       init.body = JSON.stringify(body);
@@ -328,6 +332,53 @@
       else ukaz('Súbor ' + r.subor + ' nie je platný voči XSD schéme:', false, r.chyby);
     } catch (e) {
       ukaz('Overenie zlyhalo: ' + e.message, false);
+    }
+  });
+
+  const PODPIS = {
+    popis: 'Ubytovací protokol ŠD Mladosť',
+    digest: 'http://www.w3.org/2001/04/xmlenc#sha256',
+    politika: '',
+    xdcNamespace: 'http://data.gov.sk/def/container/xmldatacontainer+xml/1.1',
+    pdfUroven: 1,
+  };
+
+  // Each D.Bridge JS method reports its result through a callback object. This makes it a Promise.
+  function podpisovac(metoda, ...args) {
+    return new Promise((resolve, reject) => {
+      ditec.dSigXadesBpJs[metoda](...args, { onSuccess: resolve, onError: reject });
+    });
+  }
+
+  function popisChyby(e) {
+    if (e && e.code === 1) return 'podpisovanie zrušil používateľ.';
+    return (e && e.message) || String(e);
+  }
+
+  document.getElementById('podpisat').addEventListener('click', async () => {
+    const tlacidlo = document.getElementById('podpisat');
+    tlacidlo.disabled = true;
+    try {
+      ukaz('Pripravujem podklady na podpis…', true);
+      const v = await volaj('/api/podpis-vstupy', null, 'GET');
+      ukaz('Spúšťam podpisovač D.Signer…', true);
+      await podpisovac('deploy', null);
+      await podpisovac('initialize');
+      await podpisovac('addXmlObject', 'protokolXml', PODPIS.popis, v.formatUri,
+        v.xml, v.identifikator, v.verzia, v.xsd, v.xsdUri, v.xsl, v.xslUri,
+        'XHTML', 'SK', '', false, PODPIS.xdcNamespace);
+      await podpisovac('addPdfObject', 'protokolPdf', PODPIS.popis + ' (PDF)', v.pdf, '',
+        v.formatUri, PODPIS.pdfUroven, false);
+      await podpisovac('sign', 'signatureId', PODPIS.digest, PODPIS.politika);
+      const asice = await podpisovac('getSignatureWithASiCEnvelopeBase64');
+      const r = await volaj('/api/uloz-podpis', { asice });
+      ukaz('Podpis uložený do súboru ' + r.subor, true);
+      odkaz(r.url, 'Stiahnuť ASiC-E');
+      odkaz('/api/vystup/protokol.pdf', 'Zobraziť PDF');
+    } catch (e) {
+      ukaz('Podpísanie zlyhalo: ' + popisChyby(e), false);
+    } finally {
+      tlacidlo.disabled = false;
     }
   });
 

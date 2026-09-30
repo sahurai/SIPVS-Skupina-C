@@ -153,7 +153,7 @@ public class XmlService {
         return html;
     }
 
-    private void requireXml() {
+    void requireXml() {
         if (!Files.exists(xml)) {
             throw new IllegalStateException("Súbor " + xml + " neexistuje. Najprv stlačte Ulož XML.");
         }
