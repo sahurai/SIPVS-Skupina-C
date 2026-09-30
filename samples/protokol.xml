@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ubytovaciProtokol xmlns="urn:mladost:ubytovaci-protokol:1.0">
+  <student univerzitneId="104233">
+    <meno>Jana</meno>
+    <priezvisko>Kováčová</priezvisko>
+    <datumNarodenia>2005-03-14</datumNarodenia>
+    <statnaPrislusnost>slovenská</statnaPrislusnost>
+    <fakulta>FIIT</fakulta>
+    <rocnik>3</rocnik>
+    <telefon>+421905123456</telefon>
+    <email>jana.kovacova@stuba.sk</email>
+    <fotografia typ="image/png">iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==</fotografia>
+  </student>
+  <adresa>
+    <ulica>Hlavná</ulica>
+    <cislo>12</cislo>
+    <mesto>Trnava</mesto>
+    <psc>917 01</psc>
+    <stat>Slovensko</stat>
+  </adresa>
+  <spotrebice>
+    <spotrebic typ="chladnicka">
+      <znacka>Gorenje</znacka>
+      <serioveCislo>GR-2023-118842</serioveCislo>
+      <prikon>90</prikon>
+    </spotrebic>
+    <spotrebic typ="rychlovarnaKanvica">
+      <znacka>Tefal</znacka>
+      <serioveCislo>TF88123A</serioveCislo>
+      <prikon>2200</prikon>
+    </spotrebic>
+    <celkovyPrikon>2290</celkovyPrikon>
+  </spotrebice>
+  <potvrdenie>
+    <suhlas>true</suhlas>
+    <datumVyplnenia>2026-09-30</datumVyplnenia>
+  </potvrdenie>
+</ubytovaciProtokol>

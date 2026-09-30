@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ubytovací protokol - ŠD Mladosť</title>
+  <link href="/webjars/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<main class="container py-4">
+  <h1>Ubytovací protokol</h1>
+  <p>Študentský domov Mladosť - nástup na ubytovanie</p>
+
+  <form id="formular">
+    <fieldset class="mb-4">
+      <legend>Študent</legend>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label" for="univerzitneId">Univerzitné ID</label>
+          <input class="form-control" id="univerzitneId" name="univerzitneId" required pattern="[0-9]+" inputmode="numeric" title="Iba číslice">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="meno">Meno</label>
+          <input class="form-control" id="meno" name="meno" required maxlength="50">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="priezvisko">Priezvisko</label>
+          <input class="form-control" id="priezvisko" name="priezvisko" required maxlength="50">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="datumNarodenia">Dátum narodenia</label>
+          <input class="form-control" id="datumNarodenia" name="datumNarodenia" type="date" required>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="vek">Vek</label>
+          <input class="form-control" id="vek" name="vek" readonly tabindex="-1">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="statnaPrislusnost">Štátna príslušnosť</label>
+          <input class="form-control" id="statnaPrislusnost" name="statnaPrislusnost" required maxlength="50" list="prislusnosti">
+          <datalist id="prislusnosti">
+            <option value="slovenská"><option value="česká"><option value="ukrajinská"><option value="maďarská">
+            <option value="poľská"><option value="srbská"><option value="rakúska"><option value="nemecká">
+          </datalist>
+        </div>
+        <div class="col-md-8">
+          <label class="form-label" for="fakulta">Fakulta</label>
+          <select class="form-select" id="fakulta" name="fakulta" required>
+            <option value="">- vyberte -</option>
+            <option value="FIIT">FIIT - Fakulta informatiky a informačných technológií</option>
+            <option value="FEI">FEI - Fakulta elektrotechniky a informatiky</option>
+            <option value="SjF">SjF - Strojnícka fakulta</option>
+            <option value="SvF">SvF - Stavebná fakulta</option>
+            <option value="FCHPT">FCHPT - Fakulta chemickej a potravinárskej technológie</option>
+            <option value="MTF">MTF - Materiálovotechnologická fakulta</option>
+            <option value="FAD">FAD - Fakulta architektúry a dizajnu</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="rocnik">Ročník</label>
+          <select class="form-select" id="rocnik" name="rocnik" required>
+            <option value="">- vyberte -</option>
+            <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="telefon">Telefón (nepovinné)</label>
+          <input class="form-control" id="telefon" name="telefon" type="tel" pattern="\+?[0-9]{9,15}" placeholder="+421900123456" title="9 až 15 číslic, voliteľne s +">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="email">E-mail (nepovinné)</label>
+          <input class="form-control" id="email" name="email" type="email" pattern="[^@\s]+@[^@\s]+\.[^@\s]+" placeholder="meno@stuba.sk">
+        </div>
+        <div class="col-md-8 d-none" id="zastupca">
+          <label class="form-label" for="zakonnyZastupca">Zákonný zástupca (študent mladší ako 18 rokov)</label>
+          <input class="form-control" id="zakonnyZastupca" name="zakonnyZastupca" maxlength="50">
+        </div>
+        <div class="col-md-8">
+          <label class="form-label" for="fotografia">Fotografia (JPEG alebo PNG, najviac 2 MB)</label>
+          <input class="form-control" id="fotografia" name="fotografia" type="file" accept="image/jpeg,image/png">
+        </div>
+        <div class="col-md-4">
+          <img id="nahlad" class="img-thumbnail d-none" width="80" alt="Náhľad fotografie">
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset class="mb-4">
+      <legend>Trvalé bydlisko</legend>
+      <div class="row g-3">
+        <div class="col-md-8">
+          <label class="form-label" for="ulica">Ulica</label>
+          <input class="form-control" id="ulica" name="ulica" required maxlength="50">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="cislo">Číslo</label>
+          <input class="form-control" id="cislo" name="cislo" required pattern="[0-9A-Za-z/\-]{1,10}" title="Číslo domu, napr. 12, 12A alebo 1234/5">
+        </div>
+        <div class="col-md-5">
+          <label class="form-label" for="mesto">Mesto</label>
+          <input class="form-control" id="mesto" name="mesto" required maxlength="50">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="psc">PSČ</label>
+          <input class="form-control" id="psc" name="psc" required pattern="[0-9A-Za-z \-]{3,10}" placeholder="917 01">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="stat">Štát</label>
+          <input class="form-control" id="stat" name="stat" required maxlength="50">
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset class="mb-4">
+      <legend>Elektrické spotrebiče</legend>
+      <p>Spotrebiče, ktoré budete používať na izbe (max. 5)</p>
+      <table class="table" id="spotrebice">
+        <thead>
+          <tr><th>P. č.</th><th>Typ</th><th>Značka</th><th>Sériové číslo</th><th>Príkon (W)</th><th></th></tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot>
+          <tr><th colspan="4">Celkový príkon</th><th id="celkovyPrikon">0 W</th><td></td></tr>
+        </tfoot>
+      </table>
+      <button type="button" class="btn btn-secondary" id="pridat">+ Pridať spotrebič</button>
+    </fieldset>
+
+    <fieldset class="mb-4">
+      <legend>Potvrdenie</legend>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" id="suhlas" name="suhlas" required>
+        <label class="form-check-label" for="suhlas">
+          Vyhlasujem, že uvedené údaje sú pravdivé a úplné a že som sa oboznámil/a s <a href="">ubytovacím poriadkom ŠD Mladosť</a>.
+        </label>
+      </div>
+      <div class="row">
+        <div class="col-md-4">
+          <label class="form-label" for="datumVyplnenia">Dátum vyplnenia</label>
+          <input class="form-control" id="datumVyplnenia" name="datumVyplnenia" type="date" required>
+        </div>
+      </div>
+    </fieldset>
+
+    <div class="d-flex flex-wrap gap-2">
+      <button type="button" class="btn btn-primary" id="uloz">Ulož XML</button>
+      <button type="button" class="btn btn-secondary" id="over">Over XML voči XSD</button>
+      <button type="button" class="btn btn-secondary" id="transformuj">Transformuj XML do HTML</button>
+    </div>
+    <div id="vystup" class="alert d-none mt-3"></div>
+  </form>
+
+  <template id="riadok">
+    <tr>
+      <td class="poradie"></td>
+      <td>
+        <select class="form-select" name="typ" required>
+          <option value="chladnicka">chladnička</option>
+          <option value="mikrovlnnaRura">mikrovlnná rúra</option>
+          <option value="rychlovarnaKanvica">rýchlovarná kanvica</option>
+          <option value="kavovar">kávovar</option>
+          <option value="ine">iné</option>
+        </select>
+      </td>
+      <td><input class="form-control" name="znacka" required maxlength="50"></td>
+      <td><input class="form-control" name="serioveCislo" required pattern="[A-Za-z0-9\-]+" title="Písmená, číslice a pomlčka"></td>
+      <td><input class="form-control" name="prikon" type="number" required min="1" max="3500" step="1"></td>
+      <td><button type="button" class="btn btn-secondary odobrat" title="Odobrať">&times;</button></td>
+    </tr>
+  </template>
+</main>
+
+<script>
+  const MAX_SPOTREBICOV = 5;
+  const form = document.getElementById('formular');
+  const tbody = document.querySelector('#spotrebice tbody');
+  const riadok = document.getElementById('riadok');
+  const pridat = document.getElementById('pridat');
+  const nahlad = document.getElementById('nahlad');
+  const vystup = document.getElementById('vystup');
+  let fotografia = null;
+
+  const dnes = () => new Date().toLocaleDateString('sv-SE');
+
+  form.datumVyplnenia.value = dnes();
+  form.datumNarodenia.max = dnes();
+  form.stat.value = 'Slovensko';
+
+  function vek(datum) {
+    if (!datum) return null;
+    const d = new Date(datum), t = new Date();
+    let v = t.getFullYear() - d.getFullYear();
+    if (t.getMonth() < d.getMonth() || (t.getMonth() === d.getMonth() && t.getDate() < d.getDate())) v--;
+    return v;
+  }
+
+  // Show the guardian field only when the student is younger than 18.
+  function prepocitajVek() {
+    const v = vek(form.datumNarodenia.value);
+    form.vek.value = v === null ? '' : v;
+    const mladsi = v !== null && v < 18;
+    document.getElementById('zastupca').classList.toggle('d-none', !mladsi);
+    form.zakonnyZastupca.required = mladsi;
+    if (!mladsi) form.zakonnyZastupca.value = '';
+  }
+  form.datumNarodenia.addEventListener('input', prepocitajVek);
+
+  function prepocitajSpotrebice() {
+    const rows = [...tbody.rows];
+    rows.forEach((r, i) => r.querySelector('.poradie').textContent = i + 1);
+    const sucet = rows.reduce((s, r) => s + (parseInt(r.querySelector('[name=prikon]').value, 10) || 0), 0);
+    document.getElementById('celkovyPrikon').textContent = sucet + ' W';
+    pridat.disabled = rows.length >= MAX_SPOTREBICOV;
+  }
+  pridat.addEventListener('click', () => {
+    tbody.appendChild(riadok.content.cloneNode(true));
+    prepocitajSpotrebice();
+  });
+  tbody.addEventListener('input', prepocitajSpotrebice);
+  tbody.addEventListener('click', e => {
+    if (!e.target.classList.contains('odobrat')) return;
+    e.target.closest('tr').remove();
+    prepocitajSpotrebice();
+  });
+
+  form.fotografia.addEventListener('change', () => {
+    const subor = form.fotografia.files[0];
+    fotografia = null;
+    nahlad.classList.add('d-none');
+    form.fotografia.setCustomValidity('');
+    if (!subor) return;
+    if (subor.size > 2 * 1024 * 1024) {
+      form.fotografia.setCustomValidity('Súbor je väčší ako 2 MB.');
+      form.fotografia.reportValidity();
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      nahlad.src = reader.result;
+      nahlad.classList.remove('d-none');
+      fotografia = { typ: subor.type, data: reader.result.split(',')[1] };
+    };
+    reader.readAsDataURL(subor);
+  });
+
+  // Send the raw values. The server builds the XML.
+  function zber() {
+    const h = n => form[n].value.trim();
+    return {
+      univerzitneId: h('univerzitneId'),
+      meno: h('meno'),
+      priezvisko: h('priezvisko'),
+      datumNarodenia: form.datumNarodenia.value || null,
+      statnaPrislusnost: h('statnaPrislusnost'),
+      fakulta: h('fakulta'),
+      rocnik: Number(form.rocnik.value),
+      telefon: h('telefon'),
+      email: h('email'),
+      fotografia,
+      zakonnyZastupca: h('zakonnyZastupca'),
+      adresa: { ulica: h('ulica'), cislo: h('cislo'), mesto: h('mesto'), psc: h('psc'), stat: h('stat') },
+      spotrebice: [...tbody.rows].map(r => ({
+        typ: r.querySelector('[name=typ]').value,
+        znacka: r.querySelector('[name=znacka]').value.trim(),
+        serioveCislo: r.querySelector('[name=serioveCislo]').value.trim(),
+        prikon: Number(r.querySelector('[name=prikon]').value),
+      })),
+      suhlas: form.suhlas.checked,
+      datumVyplnenia: form.datumVyplnenia.value || null,
+    };
+  }
+
+  async function volaj(url, body) {
+    const init = { method: 'POST' };
+    if (body) {
+      init.headers = { 'Content-Type': 'application/json' };
+      init.body = JSON.stringify(body);
+    }
+    const res = await fetch(url, init);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.chyba || res.statusText);
+    return data;
+  }
+
+  function ukaz(text, ok, zoznam) {
+    vystup.className = 'alert mt-3 ' + (ok ? 'alert-success' : 'alert-danger');
+    vystup.textContent = text;
+    if (!zoznam) return;
+    const ul = document.createElement('ul');
+    ul.className = 'mb-0';
+    for (const z of zoznam) {
+      const li = document.createElement('li');
+      li.textContent = z;
+      ul.appendChild(li);
+    }
+    vystup.appendChild(ul);
+  }
+
+  function odkaz(href, text) {
+    const a = document.createElement('a');
+    a.href = href;
+    a.target = '_blank';
+    a.className = 'alert-link';
+    a.textContent = text;
+    vystup.append('  ', a);
+  }
+
+  document.getElementById('uloz').addEventListener('click', async () => {
+    if (!form.checkValidity()) {
+      form.classList.add('was-validated');
+      form.reportValidity();
+      ukaz('Formulár obsahuje chyby. Opravte označené polia.', false);
+      return;
+    }
+    try {
+      const r = await volaj('/api/uloz-xml', zber());
+      ukaz('XML uložené do súboru ' + r.subor, true);
+      odkaz('/api/vystup/protokol.xml', 'Zobraziť XML');
+    } catch (e) {
+      ukaz('Uloženie zlyhalo: ' + e.message, false);
+    }
+  });
+
+  document.getElementById('over').addEventListener('click', async () => {
+    try {
+      const r = await volaj('/api/over-xml');
+      if (r.platny) ukaz('Súbor ' + r.subor + ' je platný voči XSD schéme.', true);
+      else ukaz('Súbor ' + r.subor + ' nie je platný voči XSD schéme:', false, r.chyby);
+    } catch (e) {
+      ukaz('Overenie zlyhalo: ' + e.message, false);
+    }
+  });
+
+  document.getElementById('transformuj').addEventListener('click', async () => {
+    try {
+      const r = await volaj('/api/transformuj-xml');
+      ukaz('HTML uložené do súboru ' + r.subor, true);
+      odkaz(r.url, 'Otvoriť HTML');
+    } catch (e) {
+      ukaz('Transformácia zlyhala: ' + e.message, false);
+    }
+  });
+</script>
+</body>
+</html>

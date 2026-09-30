@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ubytovaciProtokol xmlns="urn:mladost:ubytovaci-protokol:1.0">
+  <student univerzitneId="10A233">
+    <meno>Peter</meno>
+    <priezvisko>Novák</priezvisko>
+    <datumNarodenia>2009-11-02</datumNarodenia>
+    <statnaPrislusnost>slovenská</statnaPrislusnost>
+    <fakulta>FIT</fakulta>
+    <rocnik>7</rocnik>
+    <email>peter.novak@stuba.sk</email>
+  </student>
+  <adresa>
+    <ulica>Dlhá</ulica>
+    <cislo>7</cislo>
+    <mesto>Nitra</mesto>
+    <psc>94</psc>
+    <stat>Slovensko</stat>
+  </adresa>
+  <spotrebice>
+    <spotrebic>
+      <znacka>Samsung</znacka>
+      <serioveCislo>GR 2023/1188</serioveCislo>
+      <prikon>dvesto</prikon>
+    </spotrebic>
+    <celkovyPrikon>200</celkovyPrikon>
+  </spotrebice>
+  <potvrdenie>
+    <suhlas>áno</suhlas>
+    <datumVyplnenia>2026-09-30</datumVyplnenia>
+  </potvrdenie>
+</ubytovaciProtokol>

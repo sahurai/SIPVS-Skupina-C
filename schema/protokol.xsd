@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Check-in protocol of the Mladost dormitory. The dormitory system assigns the room, so the form has no room fields. -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="urn:mladost:ubytovaci-protokol:1.0"
+           targetNamespace="urn:mladost:ubytovaci-protokol:1.0"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
+
+  <xs:element name="ubytovaciProtokol">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="student" type="StudentType"/>
+        <xs:element name="adresa" type="AdresaType"/>
+        <xs:element name="spotrebice" type="SpotrebiceType" minOccurs="0"/>
+        <xs:element name="potvrdenie" type="PotvrdenieType"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:complexType name="StudentType">
+    <xs:sequence>
+      <xs:element name="meno" type="TextType"/>
+      <xs:element name="priezvisko" type="TextType"/>
+      <xs:element name="datumNarodenia" type="xs:date"/>
+      <xs:element name="statnaPrislusnost" type="TextType"/>
+      <xs:element name="fakulta" type="FakultaType"/>
+      <xs:element name="rocnik" type="RocnikType"/>
+      <xs:element name="telefon" type="TelefonType" minOccurs="0"/>
+      <xs:element name="email" type="EmailType" minOccurs="0"/>
+      <xs:element name="fotografia" type="FotografiaType" minOccurs="0"/>
+      <xs:element name="zakonnyZastupca" type="TextType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="univerzitneId" type="UniverzitneIdType" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="AdresaType">
+    <xs:sequence>
+      <xs:element name="ulica" type="TextType"/>
+      <xs:element name="cislo" type="CisloDomuType"/>
+      <xs:element name="mesto" type="TextType"/>
+      <xs:element name="psc" type="PscType"/>
+      <xs:element name="stat" type="TextType"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="SpotrebiceType">
+    <xs:sequence>
+      <xs:element name="spotrebic" type="SpotrebicType" maxOccurs="5"/>
+      <xs:element name="celkovyPrikon" type="xs:positiveInteger"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="SpotrebicType">
+    <xs:sequence>
+      <xs:element name="znacka" type="TextType"/>
+      <xs:element name="serioveCislo" type="SerioveCisloType"/>
+      <xs:element name="prikon" type="PrikonType"/>
+    </xs:sequence>
+    <xs:attribute name="typ" type="TypSpotrebicaType" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="FotografiaType">
+    <xs:simpleContent>
+      <xs:extension base="xs:base64Binary">
+        <xs:attribute name="typ" type="TypObrazkaType" use="required"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+  <xs:complexType name="PotvrdenieType">
+    <xs:sequence>
+      <xs:element name="suhlas" type="xs:boolean"/>
+      <xs:element name="datumVyplnenia" type="xs:date"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:simpleType name="TextType">
+    <xs:restriction base="xs:string">
+      <xs:minLength value="1"/>
+      <xs:maxLength value="50"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="UniverzitneIdType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[0-9]+"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="FakultaType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="FIIT"/>
+      <xs:enumeration value="FEI"/>
+      <xs:enumeration value="SjF"/>
+      <xs:enumeration value="SvF"/>
+      <xs:enumeration value="FCHPT"/>
+      <xs:enumeration value="MTF"/>
+      <xs:enumeration value="FAD"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="RocnikType">
+    <xs:restriction base="xs:positiveInteger">
+      <xs:maxInclusive value="6"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="TelefonType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\+?[0-9]{9,15}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="EmailType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[^@\s]+@[^@\s]+\.[^@\s]+"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="CisloDomuType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[0-9A-Za-z/\-]{1,10}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="PscType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[0-9A-Za-z \-]{3,10}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="SerioveCisloType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[A-Za-z0-9\-]+"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="TypSpotrebicaType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="chladnicka"/>
+      <xs:enumeration value="mikrovlnnaRura"/>
+      <xs:enumeration value="rychlovarnaKanvica"/>
+      <xs:enumeration value="kavovar"/>
+      <xs:enumeration value="ine"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="PrikonType">
+    <xs:restriction base="xs:positiveInteger">
+      <xs:maxInclusive value="3500"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="TypObrazkaType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="image/jpeg"/>
+      <xs:enumeration value="image/png"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+</xs:schema>
