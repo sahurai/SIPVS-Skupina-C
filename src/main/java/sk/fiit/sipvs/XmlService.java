@@ -1,6 +1,7 @@
 package sk.fiit.sipvs;
 
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -108,6 +109,13 @@ public class XmlService {
         try (OutputStream out = Files.newOutputStream(xml)) {
             t.transform(new DOMSource(doc), new StreamResult(out));
         }
+        return xml;
+    }
+
+    // A loaded file is saved without a change, so that the validation reports its real errors.
+    public Path ulozObsah(String obsah) throws Exception {
+        Files.createDirectories(xml.toAbsolutePath().getParent());
+        Files.writeString(xml, obsah, StandardCharsets.UTF_8);
         return xml;
     }
 

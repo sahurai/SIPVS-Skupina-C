@@ -26,7 +26,6 @@ The project has four parts. Each part adds functions to the same application.
 | `src/main/java/sk/fiit/sipvs/PodpisService.java` | Prepares the data for the signer. Makes the PDF. Saves the ASiC-E container. |
 | `src/main/java/sk/fiit/sipvs/ProtokolController.java` | The REST endpoints that the page calls. |
 | `src/main/resources/fonts/` | Liberation Serif. The PDF embeds this font. |
-| `src/main/resources/sRGB.icc` | Colour profile for the PDF/A output. |
 | `data/` | Output of the application. Not in git. |
 
 ## Requirements
@@ -101,27 +100,32 @@ Do these steps once on the computer that makes the signature. The seminar materi
 
 ## Demo
 
-1. Complete the form. Press **Ulož XML**. The file `data/protokol.xml` appears.
+The section **Spracovanie** below the form has four steps. A step is available only when the
+step before it succeeded. A change in the form makes the saved XML out of date, so the steps 2 to
+4 are disabled again until you save the XML.
+
+1. Create the XML in one of two ways:
+   - Complete the form and press **Ulož XML**. The server builds `data/protokol.xml`.
+   - Press **Načítať XML…** and select a file, for example `samples/protokol.xml`. The file fills
+     the form, and the server saves it as `data/protokol.xml` without a change.
 2. Press **Over XML voči XSD**. The page shows the result of the validation.
 3. Press **Transformuj XML do HTML**. The file `data/protokol.html` appears. Open it with the link.
 4. Press **Podpísať**. The application does these steps:
-   1. It reads the saved XML, the XSD and the XSLT. It removes the XML declarations.
-   2. It transforms the XML with the XSLT and makes a PDF/A-1b file `data/protokol.pdf`.
-   3. The page starts D.Signer through D.Bridge JS.
-   4. The page adds the XML object. D.Signer puts the XML, the XSD and the XSLT into an
+   1. It validates the XML against the XSD again. It refuses to sign an invalid file.
+   2. It reads the saved XML, the XSD and the XSLT. It removes the XML declarations.
+   3. It transforms the XML with the XSLT and makes a PDF/A-1b file `data/protokol.pdf`.
+   4. The page starts D.Signer through D.Bridge JS.
+   5. The page adds the XML object. D.Signer puts the XML, the XSD and the XSLT into an
       XMLDataContainer. The schemas are embedded.
-   5. The page adds the PDF object.
-   6. D.Signer shows both documents. Select the certificate *FIIT Podpisovateľ* and confirm.
-   7. The page receives the ASiC-E container as Base64. The server decodes it and writes
+   6. The page adds the PDF object.
+   7. D.Signer shows both documents. Select the certificate *FIIT Podpisovateľ* and confirm.
+   8. The page receives the ASiC-E container as Base64. The server decodes it and writes
       `data/protokol.asice`.
 5. Download the container with the link **Stiahnuť ASiC-E**.
 
-To show validation errors, replace the saved file with the invalid sample. Then press the
-validate button again:
-
-```bash
-cp samples/protokol-chybny.xml data/protokol.xml
-```
+To show validation errors, press **Načítať XML…** and select `samples/protokol-chybny.xml`. Then
+press **Over XML voči XSD**. The file is saved without a change, so the page lists all its errors.
+The steps 3 and 4 stay disabled.
 
 ## Signature parameters
 
@@ -157,5 +161,8 @@ the XMLDataContainer and the PDF. The file `signatures.xml` has one `ds:Signatur
 - The web form prevents most invalid input. The XSD validation on the server is the real check.
 - The XSLT makes XHTML, not HTML. The PDF renderer needs well-formed input. Browsers show XHTML
   in the same way.
+- D.Signer checks the PDF against PDF/A-1b. For this reason the application uses the sRGB ICC
+  profile of the JDK (version 2), embeds the whole fonts (the subsets have a wrong `CIDSet`) and
+  draws the photo on white (PDF/A-1 forbids transparency).
 - The XSLT uses tables for the layout, not flexbox. The PDF renderer and the preview in D.Signer
   do not support flexbox.

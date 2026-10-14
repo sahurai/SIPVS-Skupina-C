@@ -31,6 +31,11 @@ public class ProtokolController {
         return Map.of("subor", xml.ulozXml(protokol).toString());
     }
 
+    @PostMapping(value = "/nahraj-xml", consumes = {"application/xml", "text/xml"})
+    public Map<String, Object> nahrajXml(@RequestBody String obsah) throws Exception {
+        return Map.of("subor", xml.ulozObsah(obsah).toString());
+    }
+
     @PostMapping("/over-xml")
     public Map<String, Object> overXml() throws Exception {
         List<String> chyby = xml.overXml();

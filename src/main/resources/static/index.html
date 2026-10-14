@@ -144,15 +144,72 @@
         </div>
       </div>
     </fieldset>
-
-    <div class="d-flex flex-wrap gap-2">
-      <button type="button" class="btn btn-primary" id="uloz">Ulož XML</button>
-      <button type="button" class="btn btn-secondary" id="over">Over XML voči XSD</button>
-      <button type="button" class="btn btn-secondary" id="transformuj">Transformuj XML do HTML</button>
-      <button type="button" class="btn btn-success" id="podpisat">Podpísať</button>
-    </div>
-    <div id="vystup" class="alert d-none mt-3"></div>
   </form>
+
+  <section class="mb-4" aria-labelledby="postup">
+    <h2 class="h4" id="postup">Spracovanie</h2>
+    <p class="text-body-secondary">Kroky idú po poradí. Ďalší krok je dostupný, keď predchádzajúci skončí úspešne.</p>
+    <ol class="list-group list-group-numbered">
+      <li class="list-group-item d-flex align-items-start">
+        <div class="ms-2 flex-grow-1">
+          <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+            <div>
+              <div class="fw-semibold">Vytvorenie XML</div>
+              <div class="small text-body-secondary">Uloží údaje z formulára. Hotový XML súbor môžete aj načítať: vyplní formulár a uloží sa bez zmeny.</div>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+              <button type="button" class="btn btn-primary" id="uloz">Ulož XML</button>
+              <button type="button" class="btn btn-outline-secondary" id="nacitaj">Načítať XML…</button>
+              <input type="file" id="nacitajSubor" accept=".xml,application/xml,text/xml" hidden>
+            </div>
+          </div>
+          <div class="stav" id="stav1" hidden></div>
+        </div>
+      </li>
+      <li class="list-group-item d-flex align-items-start">
+        <div class="ms-2 flex-grow-1">
+          <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+            <div>
+              <div class="fw-semibold">Overenie voči XSD</div>
+              <div class="small text-body-secondary">Overí uložený XML súbor voči schéme protokol.xsd.</div>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+              <button type="button" class="btn btn-primary" id="over" disabled>Over XML voči XSD</button>
+            </div>
+          </div>
+          <div class="stav" id="stav2" hidden></div>
+        </div>
+      </li>
+      <li class="list-group-item d-flex align-items-start">
+        <div class="ms-2 flex-grow-1">
+          <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+            <div>
+              <div class="fw-semibold">Transformácia do HTML</div>
+              <div class="small text-body-secondary">Vytvorí HTML podľa protokol.xsl. Dostupné po úspešnom overení.</div>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+              <button type="button" class="btn btn-primary" id="transformuj" disabled>Transformuj XML do HTML</button>
+            </div>
+          </div>
+          <div class="stav" id="stav3" hidden></div>
+        </div>
+      </li>
+      <li class="list-group-item d-flex align-items-start">
+        <div class="ms-2 flex-grow-1">
+          <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+            <div>
+              <div class="fw-semibold">Elektronický podpis</div>
+              <div class="small text-body-secondary">Jedným podpisom XAdES-BES podpíše XML (s XSD a XSL) a PDF a uloží kontajner ASiC-E. Dostupné po úspešnom overení.</div>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+              <button type="button" class="btn btn-success" id="podpisat" disabled>Podpísať</button>
+            </div>
+          </div>
+          <div class="stav" id="stav4" hidden></div>
+        </div>
+      </li>
+    </ol>
+  </section>
 
   <template id="riadok">
     <tr>
@@ -176,12 +233,15 @@
 
 <script>
   const MAX_SPOTREBICOV = 5;
+  const NS = 'urn:mladost:ubytovaci-protokol:1.0';
   const form = document.getElementById('formular');
   const tbody = document.querySelector('#spotrebice tbody');
   const riadok = document.getElementById('riadok');
   const pridat = document.getElementById('pridat');
   const nahlad = document.getElementById('nahlad');
-  const vystup = document.getElementById('vystup');
+  const nacitajSubor = document.getElementById('nacitajSubor');
+  const tlacidla = Object.fromEntries(
+    ['uloz', 'nacitaj', 'over', 'transformuj', 'podpisat'].map(id => [id, document.getElementById(id)]));
   let fotografia = null;
 
   const dnes = () => new Date().toLocaleDateString('sv-SE');
@@ -189,6 +249,8 @@
   form.datumVyplnenia.value = dnes();
   form.datumNarodenia.max = dnes();
   form.stat.value = 'Slovensko';
+
+  // ---------- Form ----------
 
   function vek(datum) {
     if (!datum) return null;
@@ -219,12 +281,14 @@
   pridat.addEventListener('click', () => {
     tbody.appendChild(riadok.content.cloneNode(true));
     prepocitajSpotrebice();
+    zmena();
   });
   tbody.addEventListener('input', prepocitajSpotrebice);
   tbody.addEventListener('click', e => {
     if (!e.target.classList.contains('odobrat')) return;
     e.target.closest('tr').remove();
     prepocitajSpotrebice();
+    zmena();
   });
 
   form.fotografia.addEventListener('change', () => {
@@ -274,9 +338,139 @@
     };
   }
 
+  // Fill the form from a protocol file. Values that the form does not allow stay empty.
+  function nacitajXml(text) {
+    const doc = new DOMParser().parseFromString(text, 'application/xml');
+    if (doc.getElementsByTagName('parsererror').length) throw new Error('súbor nie je správne utvorené XML.');
+    const koren = doc.documentElement;
+    if (koren.namespaceURI !== NS || koren.localName !== 'ubytovaciProtokol') {
+      throw new Error('súbor nie je ubytovací protokol.');
+    }
+    const prvok = n => koren.getElementsByTagNameNS(NS, n)[0];
+    const hodnota = n => prvok(n)?.textContent.trim() ?? '';
+
+    form.reset();
+    form.classList.remove('was-validated');
+    form.univerzitneId.value = prvok('student')?.getAttribute('univerzitneId') ?? '';
+    for (const n of ['meno', 'priezvisko', 'datumNarodenia', 'statnaPrislusnost', 'fakulta', 'rocnik', 'telefon', 'email',
+                     'ulica', 'cislo', 'mesto', 'psc', 'stat', 'datumVyplnenia']) {
+      form[n].value = hodnota(n);
+    }
+    prepocitajVek();
+    form.zakonnyZastupca.value = hodnota('zakonnyZastupca');
+    form.suhlas.checked = ['true', '1'].includes(hodnota('suhlas'));
+
+    const foto = prvok('fotografia');
+    fotografia = null;
+    nahlad.classList.add('d-none');
+    form.fotografia.setCustomValidity('');
+    if (foto) {
+      fotografia = { typ: foto.getAttribute('typ'), data: foto.textContent.replace(/\s/g, '') };
+      nahlad.src = 'data:' + fotografia.typ + ';base64,' + fotografia.data;
+      nahlad.classList.remove('d-none');
+    }
+
+    tbody.replaceChildren();
+    for (const s of koren.getElementsByTagNameNS(NS, 'spotrebic')) {
+      tbody.appendChild(riadok.content.cloneNode(true));
+      const r = tbody.lastElementChild;
+      const pole = n => s.getElementsByTagNameNS(NS, n)[0]?.textContent.trim() ?? '';
+      r.querySelector('[name=typ]').value = s.getAttribute('typ');
+      r.querySelector('[name=znacka]').value = pole('znacka');
+      r.querySelector('[name=serioveCislo]').value = pole('serioveCislo');
+      r.querySelector('[name=prikon]').value = pole('prikon');
+    }
+    prepocitajSpotrebice();
+  }
+
+  // ---------- Steps ----------
+
+  // ulozene: the server has the XML of the current form. platne: that XML is valid against the XSD.
+  let ulozene = false;
+  let platne = false;
+
+  function obnovKroky() {
+    tlacidla.uloz.disabled = false;
+    tlacidla.nacitaj.disabled = false;
+    tlacidla.over.disabled = !ulozene;
+    tlacidla.transformuj.disabled = !platne;
+    tlacidla.podpisat.disabled = !platne;
+  }
+
+  function zablokujKroky() {
+    Object.values(tlacidla).forEach(b => b.disabled = true);
+  }
+
+  // Show the result of step n. The type is 'ok', 'chyba' or 'info'.
+  function stav(n, typ, text, { zoznam, odkazy } = {}) {
+    const el = document.getElementById('stav' + n);
+    el.hidden = false;
+    el.className = 'stav alert py-2 px-3 mt-2 mb-0 small alert-' + { ok: 'success', chyba: 'danger', info: 'secondary' }[typ];
+    el.textContent = text;
+    for (const [href, popis] of odkazy || []) {
+      const a = document.createElement('a');
+      a.href = href;
+      a.target = '_blank';
+      a.className = 'alert-link ms-2';
+      a.textContent = popis;
+      el.append(a);
+    }
+    if (zoznam) {
+      const ul = document.createElement('ul');
+      ul.className = 'mb-0 mt-1';
+      for (const z of zoznam) {
+        const li = document.createElement('li');
+        li.textContent = z;
+        ul.appendChild(li);
+      }
+      el.appendChild(ul);
+    }
+  }
+
+  // Hide the results of step n and of all later steps.
+  function zmazStav(n) {
+    for (let i = n; i <= 4; i++) {
+      const el = document.getElementById('stav' + i);
+      el.hidden = true;
+      el.replaceChildren();
+    }
+  }
+
+  function novyXml() {
+    ulozene = true;
+    platne = false;
+    zmazStav(2);
+  }
+
+  // A change in the form makes the saved XML out of date.
+  function zmena() {
+    if (!ulozene) return;
+    ulozene = platne = false;
+    zmazStav(2);
+    stav(1, 'info', 'Formulár sa zmenil. Uložte XML znova.');
+    obnovKroky();
+  }
+  form.addEventListener('input', zmena);
+  form.addEventListener('change', zmena);
+
+  // Run one step. All buttons are disabled while it runs.
+  function krok(tlacidlo, akcia) {
+    tlacidlo.addEventListener('click', async () => {
+      zablokujKroky();
+      try {
+        await akcia();
+      } finally {
+        obnovKroky();
+      }
+    });
+  }
+
   async function volaj(url, body, metoda = 'POST') {
     const init = { method: metoda };
-    if (body) {
+    if (typeof body === 'string') {
+      init.headers = { 'Content-Type': 'application/xml;charset=UTF-8' };
+      init.body = body;
+    } else if (body) {
       init.headers = { 'Content-Type': 'application/json' };
       init.body = JSON.stringify(body);
     }
@@ -286,55 +480,73 @@
     return data;
   }
 
-  function ukaz(text, ok, zoznam) {
-    vystup.className = 'alert mt-3 ' + (ok ? 'alert-success' : 'alert-danger');
-    vystup.textContent = text;
-    if (!zoznam) return;
-    const ul = document.createElement('ul');
-    ul.className = 'mb-0';
-    for (const z of zoznam) {
-      const li = document.createElement('li');
-      li.textContent = z;
-      ul.appendChild(li);
-    }
-    vystup.appendChild(ul);
-  }
-
-  function odkaz(href, text) {
-    const a = document.createElement('a');
-    a.href = href;
-    a.target = '_blank';
-    a.className = 'alert-link';
-    a.textContent = text;
-    vystup.append('  ', a);
-  }
-
-  document.getElementById('uloz').addEventListener('click', async () => {
+  // Step 1a: save the form.
+  krok(tlacidla.uloz, async () => {
     if (!form.checkValidity()) {
       form.classList.add('was-validated');
       form.reportValidity();
-      ukaz('Formulár obsahuje chyby. Opravte označené polia.', false);
+      stav(1, 'chyba', 'Formulár obsahuje chyby. Opravte označené polia.');
       return;
     }
     try {
       const r = await volaj('/api/uloz-xml', zber());
-      ukaz('XML uložené do súboru ' + r.subor, true);
-      odkaz('/api/vystup/protokol.xml', 'Zobraziť XML');
+      form.classList.remove('was-validated');
+      novyXml();
+      stav(1, 'ok', 'Údaje z formulára sú uložené v súbore ' + r.subor + '.',
+        { odkazy: [['/api/vystup/protokol.xml', 'Zobraziť XML']] });
     } catch (e) {
-      ukaz('Uloženie zlyhalo: ' + e.message, false);
+      stav(1, 'chyba', 'Uloženie zlyhalo: ' + e.message);
     }
   });
 
-  document.getElementById('over').addEventListener('click', async () => {
+  // Step 1b: load a file. The server keeps the file without a change, so step 2 reports its real errors.
+  tlacidla.nacitaj.addEventListener('click', () => nacitajSubor.click());
+  nacitajSubor.addEventListener('change', async () => {
+    const subor = nacitajSubor.files[0];
+    nacitajSubor.value = '';
+    if (!subor) return;
+    zablokujKroky();
+    try {
+      const text = await subor.text();
+      nacitajXml(text);
+      const r = await volaj('/api/nahraj-xml', text);
+      novyXml();
+      stav(1, 'ok', 'Súbor ' + subor.name + ' je načítaný do formulára a uložený bez zmeny v súbore ' + r.subor
+        + '. Pokračujte overením voči XSD.', { odkazy: [['/api/vystup/protokol.xml', 'Zobraziť XML']] });
+    } catch (e) {
+      ulozene = platne = false;
+      zmazStav(2);
+      stav(1, 'chyba', 'Načítanie zlyhalo: ' + e.message);
+    } finally {
+      obnovKroky();
+    }
+  });
+
+  // Step 2: validate against the XSD.
+  krok(tlacidla.over, async () => {
+    zmazStav(2);
     try {
       const r = await volaj('/api/over-xml');
-      if (r.platny) ukaz('Súbor ' + r.subor + ' je platný voči XSD schéme.', true);
-      else ukaz('Súbor ' + r.subor + ' nie je platný voči XSD schéme:', false, r.chyby);
+      platne = r.platny;
+      if (r.platny) stav(2, 'ok', 'Súbor ' + r.subor + ' je platný voči XSD schéme.');
+      else stav(2, 'chyba', 'Súbor ' + r.subor + ' nie je platný voči XSD schéme:', { zoznam: r.chyby });
     } catch (e) {
-      ukaz('Overenie zlyhalo: ' + e.message, false);
+      platne = false;
+      stav(2, 'chyba', 'Overenie zlyhalo: ' + e.message);
     }
   });
 
+  // Step 3: transform to HTML.
+  krok(tlacidla.transformuj, async () => {
+    try {
+      const r = await volaj('/api/transformuj-xml');
+      stav(3, 'ok', 'HTML je uložené v súbore ' + r.subor + '.', { odkazy: [[r.url, 'Otvoriť HTML']] });
+    } catch (e) {
+      stav(3, 'chyba', 'Transformácia zlyhala: ' + e.message);
+    }
+  });
+
+  // Step 4: sign.
   const PODPIS = {
     popis: 'Ubytovací protokol ŠD Mladosť',
     digest: 'http://www.w3.org/2001/04/xmlenc#sha256',
@@ -355,13 +567,11 @@
     return (e && e.message) || String(e);
   }
 
-  document.getElementById('podpisat').addEventListener('click', async () => {
-    const tlacidlo = document.getElementById('podpisat');
-    tlacidlo.disabled = true;
+  krok(tlacidla.podpisat, async () => {
     try {
-      ukaz('Pripravujem podklady na podpis…', true);
+      stav(4, 'info', 'Pripravujem podklady na podpis…');
       const v = await volaj('/api/podpis-vstupy', null, 'GET');
-      ukaz('Spúšťam podpisovač D.Signer…', true);
+      stav(4, 'info', 'Spúšťam podpisovač D.Signer…');
       await podpisovac('deploy', null);
       await podpisovac('initialize');
       await podpisovac('addXmlObject', 'protokolXml', PODPIS.popis, v.formatUri,
@@ -372,23 +582,10 @@
       await podpisovac('sign', 'signatureId', PODPIS.digest, PODPIS.politika);
       const asice = await podpisovac('getSignatureWithASiCEnvelopeBase64');
       const r = await volaj('/api/uloz-podpis', { asice });
-      ukaz('Podpis uložený do súboru ' + r.subor, true);
-      odkaz(r.url, 'Stiahnuť ASiC-E');
-      odkaz('/api/vystup/protokol.pdf', 'Zobraziť PDF');
+      stav(4, 'ok', 'Podpis je uložený v súbore ' + r.subor + '.',
+        { odkazy: [[r.url, 'Stiahnuť ASiC-E'], ['/api/vystup/protokol.pdf', 'Zobraziť PDF']] });
     } catch (e) {
-      ukaz('Podpísanie zlyhalo: ' + popisChyby(e), false);
-    } finally {
-      tlacidlo.disabled = false;
-    }
-  });
-
-  document.getElementById('transformuj').addEventListener('click', async () => {
-    try {
-      const r = await volaj('/api/transformuj-xml');
-      ukaz('HTML uložené do súboru ' + r.subor, true);
-      odkaz(r.url, 'Otvoriť HTML');
-    } catch (e) {
-      ukaz('Transformácia zlyhala: ' + e.message, false);
+      stav(4, 'chyba', 'Podpísanie zlyhalo: ' + popisChyby(e));
     }
   });
 </script>
