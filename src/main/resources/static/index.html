@@ -208,6 +208,20 @@
           <div class="stav" id="stav4" hidden></div>
         </div>
       </li>
+      <li class="list-group-item d-flex align-items-start">
+        <div class="ms-2 flex-grow-1">
+          <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+            <div>
+              <div class="fw-semibold">Časová pečiatka</div>
+              <div class="small text-body-secondary">Odošle hash celého elementu ds:SignatureValue na server časovej pečiatky a odpoveď vloží do ds:Signature. Z XAdES-BES vznikne XAdES-T. Dostupné po podpise.</div>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+              <button type="button" class="btn btn-success" id="peciatka" disabled>Pridať časovú pečiatku</button>
+            </div>
+          </div>
+          <div class="stav" id="stav5" hidden></div>
+        </div>
+      </li>
     </ol>
   </section>
 
@@ -241,7 +255,7 @@
   const nahlad = document.getElementById('nahlad');
   const nacitajSubor = document.getElementById('nacitajSubor');
   const tlacidla = Object.fromEntries(
-    ['uloz', 'nacitaj', 'over', 'transformuj', 'podpisat'].map(id => [id, document.getElementById(id)]));
+    ['uloz', 'nacitaj', 'over', 'transformuj', 'podpisat', 'peciatka'].map(id => [id, document.getElementById(id)]));
   let fotografia = null;
 
   const dnes = () => new Date().toLocaleDateString('sv-SE');
@@ -388,6 +402,7 @@
   // ulozene: the server has the XML of the current form. platne: that XML is valid against the XSD.
   let ulozene = false;
   let platne = false;
+  let podpisane = false;
 
   function obnovKroky() {
     tlacidla.uloz.disabled = false;
@@ -395,6 +410,7 @@
     tlacidla.over.disabled = !ulozene;
     tlacidla.transformuj.disabled = !platne;
     tlacidla.podpisat.disabled = !platne;
+    tlacidla.peciatka.disabled = !podpisane;
   }
 
   function zablokujKroky() {
@@ -429,7 +445,7 @@
 
   // Hide the results of step n and of all later steps.
   function zmazStav(n) {
-    for (let i = n; i <= 4; i++) {
+    for (let i = n; i <= 5; i++) {
       const el = document.getElementById('stav' + i);
       el.hidden = true;
       el.replaceChildren();
@@ -439,13 +455,14 @@
   function novyXml() {
     ulozene = true;
     platne = false;
+    podpisane = false;
     zmazStav(2);
   }
 
   // A change in the form makes the saved XML out of date.
   function zmena() {
     if (!ulozene) return;
-    ulozene = platne = false;
+    ulozene = platne = podpisane = false;
     zmazStav(2);
     stav(1, 'info', 'Formulár sa zmenil. Uložte XML znova.');
     obnovKroky();
@@ -514,7 +531,7 @@
       stav(1, 'ok', 'Súbor ' + subor.name + ' je načítaný do formulára a uložený bez zmeny v súbore ' + r.subor
         + '. Pokračujte overením voči XSD.', { odkazy: [['/api/vystup/protokol.xml', 'Zobraziť XML']] });
     } catch (e) {
-      ulozene = platne = false;
+      ulozene = platne = podpisane = false;
       zmazStav(2);
       stav(1, 'chyba', 'Načítanie zlyhalo: ' + e.message);
     } finally {
@@ -568,6 +585,8 @@
   }
 
   krok(tlacidla.podpisat, async () => {
+    podpisane = false;
+    zmazStav(4);
     try {
       stav(4, 'info', 'Pripravujem podklady na podpis…');
       const v = await volaj('/api/podpis-vstupy', null, 'GET');
@@ -582,10 +601,24 @@
       await podpisovac('sign', 'signatureId', PODPIS.digest, PODPIS.politika);
       const asice = await podpisovac('getSignatureWithASiCEnvelopeBase64');
       const r = await volaj('/api/uloz-podpis', { asice });
+      podpisane = true;
       stav(4, 'ok', 'Podpis je uložený v súbore ' + r.subor + '.',
         { odkazy: [[r.url, 'Stiahnuť ASiC-E'], ['/api/vystup/protokol.pdf', 'Zobraziť PDF']] });
     } catch (e) {
       stav(4, 'chyba', 'Podpísanie zlyhalo: ' + popisChyby(e));
+    }
+  });
+  // Step 5: timestamp
+  krok(tlacidla.peciatka, async () => {
+    zmazStav(5);
+    try {
+      stav(5, 'info', 'Žiadam server o časovú pečiatku…');
+      const r = await volaj('/api/casova-peciatka');
+      stav(5, 'ok', 'Časová pečiatka z ' + new Date(r.cas).toLocaleString('sk-SK') + ' (server ' + r.tsa
+              + ') je vložená do podpisu. XAdES-T kontajner je uložený v súbore ' + r.subor + '.',
+              { odkazy: [[r.url, 'Stiahnuť ASiC-E (XAdES-T)']] });
+    } catch (e) {
+      stav(5, 'chyba', 'Pridanie časovej pečiatky zlyhalo: ' + e.message);
     }
   });
 </script>

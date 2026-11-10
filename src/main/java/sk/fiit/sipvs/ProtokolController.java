@@ -20,10 +20,12 @@ public class ProtokolController {
 
     private final XmlService xml;
     private final PodpisService podpis;
+    private final CasovaPeciatkaService peciatka;
 
-    public ProtokolController(XmlService xml, PodpisService podpis) {
+    public ProtokolController(XmlService xml, PodpisService podpis,  CasovaPeciatkaService peciatka) {
         this.xml = xml;
         this.podpis = podpis;
+        this.peciatka = peciatka;
     }
 
     @PostMapping("/uloz-xml")
@@ -68,6 +70,20 @@ public class ProtokolController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"protokol.asice\"")
                 .body(new FileSystemResource(podpis.asiceSubor()));
     }
+    @PostMapping("/casova-peciatka")
+    public Map<String, Object> casovaPeciatka() throws Exception {
+        CasovaPeciatkaService.Vysledok v = peciatka.pridaj();
+        return Map.of("subor", v.subor().toString(), "url", "/api/vystup/protokol-t.asice",
+                "cas", v.cas().toString(), "tsa", v.tsa());
+    }
+
+    @GetMapping(value = "/vystup/protokol-t.asice", produces = "application/vnd.etsi.asic-e+zip")
+    public ResponseEntity<Resource> vystupAsiceT() {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"protokol-t.asice\"")
+                .body(new FileSystemResource(peciatka.vystupSubor()));
+    }
+
 
     @GetMapping(value = "/vystup/protokol.xml", produces = "application/xml;charset=UTF-8")
     public Resource vystupXml() {
