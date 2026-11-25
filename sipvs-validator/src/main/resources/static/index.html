@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Overovač podpisov</title>
+  <link href="/webjars/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .xml-view { max-height: 28rem; overflow: auto; font-size: .8rem; white-space: pre-wrap; word-break: break-all; }
+    .xml-tag { color: var(--bs-primary); }
+    .xml-attr { color: var(--bs-danger-text-emphasis); }
+    .xml-error { background: var(--bs-danger-bg-subtle); color: var(--bs-danger-text-emphasis); outline: 2px solid var(--bs-danger); }
+  </style>
+</head>
+<body>
+<main class="container py-4">
+  <h1>Overovač podpisov</h1>
+
+  <div class="mb-3">
+    <label class="form-label" for="file">Nahrať ASiC-E kontajnery</label>
+    <input class="form-control" type="file" id="file" accept=".asice" multiple>
+  </div>
+
+  <table class="table align-middle">
+    <thead>
+    <tr>
+      <th>Názov</th>
+      <th>Overenie</th>
+      <th>Výsledok</th>
+      <th></th>
+    </tr>
+    </thead>
+    <tbody id="rows">
+    <tr id="empty-row">
+      <td colspan="4" class="text-muted">Žiadne nahraté súbory.</td>
+    </tr>
+    </tbody>
+    <tfoot>
+    <tr>
+      <td colspan="4" class="text-end">
+        <button class="btn btn-primary" type="button" id="validate-all" disabled>Overiť všetky</button>
+      </td>
+    </tr>
+    </tfoot>
+  </table>
+</main>
+<script>
+  const input = document.getElementById('file');
+  const rows = document.getElementById('rows');
+  const emptyRow = document.getElementById('empty-row');
+  const validateAllButton = document.getElementById('validate-all');
+  const entries = [];
+
+  function button(cssClass, text, onClick) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'btn btn-sm ' + cssClass;
+    b.textContent = text;
+    b.addEventListener('click', onClick);
+    return b;
+  }
+
+  function cell(...children) {
+    const td = document.createElement('td');
+    td.append(...children);
+    return td;
+  }
+
+  function refresh() {
+    emptyRow.hidden = entries.length > 0;
+    validateAllButton.disabled = entries.length === 0;
+  }
+
+  function showResult(entry, cssClass, text) {
+    entry.result.className = cssClass;
+    entry.result.textContent = text;
+    entry.xmlButton.hidden = true;
+    entry.detailRow.hidden = true;
+  }
+
+  function span(cssClass, text) {
+    const s = document.createElement('span');
+    s.className = cssClass;
+    s.textContent = text;
+    return s;
+  }
+
+  function shortText(text) {
+    const value = text.trim();
+    return value.length > 80 ? value.slice(0, 80) + '…' : value;
+  }
+
+  function marked(pre, wanted, cssClass, text) {
+    if (!wanted) {
+      return span(cssClass, text);
+    }
+    const m = document.createElement('mark');
+    m.className = 'xml-error';
+    m.textContent = text;
+    pre.target = m;
+    return m;
+  }
+
+  function renderElement(element, depth, error, pre) {
+    const isTarget = element === error.element;
+    const indent = '  '.repeat(depth);
+    const children = [...element.childNodes].filter(n => n.nodeType === Node.ELEMENT_NODE);
+    const text = [...element.childNodes]
+      .filter(n => n.nodeType === Node.TEXT_NODE || n.nodeType === Node.CDATA_SECTION_NODE)
+      .map(n => n.data).join('');
+    const showsText = children.length === 0 && text.trim() !== '';
+    const markTag = isTarget && (error.mark === 'TAG' || (error.mark === 'TEXT' && !showsText));
+    const open = [span('xml-tag', indent + '<'), marked(pre, markTag, 'xml-tag', element.nodeName)];
+    for (const attr of element.attributes) {
+      const wrong = isTarget && error.mark === 'ATTRIBUTE' && attr.name === error.attribute;
+      open.push(' ', span('xml-attr', attr.name), '="', marked(pre, wrong, '', attr.value), '"');
+    }
+    if (children.length === 0 && !showsText) {
+      pre.append(...open, span('xml-tag', '/>'), '\n');
+    } else if (children.length === 0) {
+      pre.append(...open, span('xml-tag', '>'), marked(pre, isTarget && error.mark === 'TEXT', '', shortText(text)),
+        span('xml-tag', '</' + element.nodeName + '>'), '\n');
+    } else {
+      pre.append(...open, span('xml-tag', '>'), '\n');
+      children.forEach(child => renderElement(child, depth + 1, error, pre));
+      pre.append(span('xml-tag', indent + '</' + element.nodeName + '>'), '\n');
+    }
+  }
+
+  function showXml(entry) {
+    const location = entry.location;
+    const view = entry.xmlView;
+    view.replaceChildren();
+    const heading = document.createElement('div');
+    heading.className = 'fw-bold mb-2';
+    heading.textContent = location.file;
+    const pre = document.createElement('pre');
+    pre.className = 'xml-view border rounded p-2 bg-body-tertiary';
+    const xml = new DOMParser().parseFromString(location.content, 'application/xml');
+    if (xml.getElementsByTagName('parsererror').length > 0) {
+      pre.textContent = location.content;
+    } else {
+      const error = {
+        element: location.path
+          ? xml.evaluate(location.path, xml, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue
+          : null,
+        mark: location.mark,
+        attribute: location.attribute
+      };
+      try {
+        renderElement(xml.documentElement, 0, error, pre);
+      } catch (e) {
+        pre.replaceChildren();
+        pre.textContent = location.content;
+      }
+    }
+    view.append(heading, pre);
+    entry.detailRow.hidden = false;
+    if (pre.target) {
+      pre.target.scrollIntoView({ block: 'center' });
+    }
+  }
+
+  function toggleXml(entry) {
+    if (entry.detailRow.hidden) {
+      showXml(entry);
+    } else {
+      entry.detailRow.hidden = true;
+    }
+  }
+
+  async function validate(entry) {
+    entry.validateButton.disabled = true;
+    showResult(entry, 'text-muted', 'Overujem…');
+    const body = new FormData();
+    body.append('file', entry.file);
+    try {
+      const response = await fetch('/api/validate', { method: 'POST', body });
+      const data = await response.json();
+      const error = response.ok ? data.files[0].error : data.error;
+      if (error) {
+        showResult(entry, 'text-danger', error);
+        entry.location = response.ok ? data.files[0].location : null;
+        entry.xmlButton.hidden = !entry.location || !entry.location.content;
+      } else {
+        showResult(entry, 'text-success fw-bold', 'OK');
+      }
+    } catch (e) {
+      showResult(entry, 'text-danger', 'Overenie zlyhalo: ' + e.message);
+    } finally {
+      entry.validateButton.disabled = false;
+    }
+  }
+
+  function remove(entry) {
+    entries.splice(entries.indexOf(entry), 1);
+    entry.row.remove();
+    entry.detailRow.remove();
+    refresh();
+  }
+
+  function add(file) {
+    const entry = { file, row: document.createElement('tr'), result: document.createElement('span') };
+    entry.validateButton = button('btn-outline-primary', 'Overiť', () => validate(entry));
+    entry.xmlButton = button('btn-outline-secondary ms-2', 'Zobraziť XML', () => toggleXml(entry));
+    entry.xmlButton.hidden = true;
+    entry.detailRow = document.createElement('tr');
+    entry.detailRow.hidden = true;
+    entry.xmlView = document.createElement('td');
+    entry.xmlView.colSpan = 4;
+    entry.detailRow.append(entry.xmlView);
+    entry.row.append(
+      cell(file.name),
+      cell(entry.validateButton),
+      cell(entry.result, entry.xmlButton),
+      cell(button('btn-outline-danger', 'Odstrániť', () => remove(entry)))
+    );
+    rows.append(entry.row, entry.detailRow);
+    entries.push(entry);
+  }
+
+  input.addEventListener('change', () => {
+    [...input.files].forEach(add);
+    input.value = '';
+    refresh();
+  });
+
+  validateAllButton.addEventListener('click', async () => {
+    validateAllButton.disabled = true;
+    for (const entry of [...entries]) {
+      await validate(entry);
+    }
+    refresh();
+  });
+</script>
+</body>
+</html>

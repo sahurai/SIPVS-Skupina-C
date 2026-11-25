@@ -10,8 +10,20 @@ The project has four parts. Each part adds functions to the same application.
 |---|---|---|
 | 1 | XML form: save XML, validate against XSD, transform to HTML | done |
 | 2 | Electronic signature: sign the XML and a PDF with D.Signer, save an ASiC-E container | done |
-| 3 | Timestamp: extend XAdES-BES to XAdES-T | not started |
-| 4 | Verification of the XAdES-T signature | not started |
+| 3 | Timestamp: extend XAdES-BES to XAdES-T | done |
+| 4 | Verification of the XAdES-T signature | done |
+
+The repository has two separate Spring Boot applications. Each has its own Maven wrapper.
+
+| Folder | Application | Port |
+|---|---|---|
+| `sipvs-mladost/` | Parts 1 to 3: the form, the signature and the timestamp. | 8080 |
+| `sipvs-validator/` | Part 4: the verifier of ASiC-E containers with XAdES-T. See [sipvs-validator/README.md](sipvs-validator/README.md). | 8081 |
+
+Run each application from its own folder, for example `cd sipvs-validator && ./mvnw spring-boot:run`.
+The root `pom.xml` only groups both modules: `./mvnw package` in the root folder builds both. Open the
+root folder in IntelliJ, and it imports both modules from this file.
+The paths below are relative to `sipvs-mladost/`.
 
 ## Files
 

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Schema of the xzep elements in ds:SignatureProperty. Source: profile XAdES_ZEPbp v1.0 (GOV_ZEP.192, version 9), section 4.2.8. The definitions are copied unchanged; the profile prints them without the xsd:schema element, so the xsd:schema element was added: target namespace = the xzep namespace without the trailing slash (as in the samples, see PROFILE-RULES.md 4.2.3), qualified local elements. -->
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xzep="http://www.ditec.sk/ep/signature_formats/xades_zepbp/v1.0" targetNamespace="http://www.ditec.sk/ep/signature_formats/xades_zepbp/v1.0" elementFormDefault="qualified">
+
+<xsd:element name="SignatureVersion" type="xsd:anyURI"/>
+
+<xsd:element name="ProductInfos" type="xzep:ProductInfosType"/>
+<xsd:complexType name="ProductInfosType">
+    <xsd:sequence>
+        <xsd:element ref="xzep:ProductInfo" maxOccurs="unbounded"/>
+    </xsd:sequence>
+</xsd:complexType>
+
+<xsd:element name="ProductInfo" type="xzep:ProductInfoType"/>
+<xsd:complexType name="ProductInfoType">
+    <xsd:sequence>
+        <xsd:element name="ProductName" type="xsd:string"/>
+        <xsd:element name="ProductVersion" type="xsd:string"/>
+    </xsd:sequence>
+</xsd:complexType>
+
+</xsd:schema>
